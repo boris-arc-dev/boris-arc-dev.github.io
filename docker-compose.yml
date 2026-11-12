@@ -1,0 +1,20 @@
+services:
+  jekyll:
+    image: ruby:3.3-alpine
+    container_name: the-arc-archive-preview
+    working_dir: /srv/jekyll
+    command: >
+      sh -c "apk add --no-cache build-base git &&
+             bundle install &&
+             bundle exec jekyll serve --host 0.0.0.0 --port 4000 --livereload --force_polling"
+    ports:
+      - "4000:4000"
+      - "35729:35729"
+    volumes:
+      - .:/srv/jekyll
+      - bundle_cache:/usr/local/bundle
+    environment:
+      JEKYLL_ENV: development
+
+volumes:
+  bundle_cache:
