@@ -18,7 +18,7 @@ Jekyll [Chirpy](https://github.com/cotes2020/jekyll-theme-chirpy) 테마 기반�
 
 ## 🚀 로컬 프리뷰 실행 (OrbStack / Docker)
 
-로컬 머신(Intel i9 macOS)의 서멀 스로틀링 및 Ruby 버전 의존성 컴파일 부담 없이, 경량화 컨테이너 데몬(OrbStack)을 통해 즉시 프리뷰할 수 있습니다.
+호스트 머신의 복잡한 Ruby 런타임 버전 관리나 네이티브 빌드 오버헤드 없이, 경량화 컨테이너 데몬(OrbStack / Docker)을 통해 즉시 로컬 프리뷰를 실행할 수 있습니다.
 
 ```bash
 # 로컬 개발 서버 시작 (http://localhost:4000)
