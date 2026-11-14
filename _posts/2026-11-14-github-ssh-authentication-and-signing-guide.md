@@ -191,3 +191,6 @@ Author: YourName <your_email@users.noreply.github.com>
 * **원인 1**: GitHub 웹에 등록할 때 Key type을 `Signing Key`가 아닌 `Authentication Key`로 등록한 경우.
 * **원인 2**: Git의 커밋 이메일(`git config user.email`)과 GitHub 계정에 등록된 이메일 주소가 서로 다른 경우.
 * **해결**: GitHub 웹에서 `Signing Key` 타입으로 재등록하고, 커밋 이메일이 GitHub 프로필 이메일(또는 공식 No-reply 이메일)과 일치하는지 확인합니다.
+
+> [!TIP]
+> **보안 권장사항**: GitHub 계정의 2단계 인증(2FA)과 함께 SSH 커밋 서명을 결합하면, 계정 탈취 및 소스코드 위변조 공격을 99.9% 원천 차단할 수 있습니다.
