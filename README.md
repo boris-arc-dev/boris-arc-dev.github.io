@@ -52,4 +52,16 @@ tags: [태그1, 태그2]
 
 ## 🚀 배포 (Deployment)
 
-`main` 브랜치에 변경 사항을 `git push`하면 GitHub Actions 워크플로(`.github/workflows/pages-deploy.yml`)가 자동으로 실행되어 정적 사이트를 빌드하고 GitHub Pages로 배포합니다.
+본 블로그는 **단일 마스터 지식 원장(`notes/guides/`)과 연동된 자동화 도구**를 통해 배포됩니다:
+
+```bash
+# notes/guides/ 에서 작성한 공개(public) 가이드 문서를 원클릭 배포:
+blog-publish 2026-11-14-macos-dotfiles-and-zsh-internals.md
+
+# ➡️ 1. 보안 검사 (식별자/시크릿 유출 및 visibility: internal 비공개 차단)
+# ➡️ 2. _posts/ 로 자동 동기화
+# ➡️ 3. Ed25519 SSH 디지털 서명이 적용된 Verified 커밋 생성
+# ➡️ 4. GitHub Actions 자동 빌드 & 전 세계 라이브 서비스 완료!
+```
+
+* `main` 브랜치에 변경 사항이 푸시되면 GitHub Actions 워크플로(`.github/workflows/pages-deploy.yml`)가 자동으로 실행되어 정적 사이트를 빌드하고 GitHub Pages로 배포합니다.
