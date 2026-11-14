@@ -2,6 +2,7 @@
 title: "외부 의존성 제로: OpenSSL PBKDF2 기반 로컬 시크릿 암호화 및 1초 재해 복구(DR) 파이프라인"
 date: 2026-11-14 22:15:00 +0900
 visibility: public
+mermaid: true
 categories: [Security, Architecture]
 tags: [security, openssl, encryption, pbkdf2, disaster-recovery, devops, shell]
 description: "외부 GPG 도구 설치 없이 OpenSSL 10만 회 PBKDF2 키 스트레칭과 쉘 스크립트만으로 구축한 군사급 로컬 시크릿 라이프사이클과 드리프트 감지 아키텍처를 소개합니다."
