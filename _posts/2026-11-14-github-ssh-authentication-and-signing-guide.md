@@ -1,6 +1,7 @@
 ---
 title: "GitHub SSH Authentication & Signing Key 구축 가이드 (Verified 커밋 서명)"
 date: 2026-11-14 16:30:00 +0900
+visibility: public
 categories: [Security & Git, SSH]
 tags: [git, github, ssh, ed25519, commit-signing, security]
 description: "Ed25519 SSH 키 하나로 GitHub 통신 인증과 위조 불가능한 커밋 서명(Verified 뱃지)을 동시에 구축하는 실전 가이드입니다."
