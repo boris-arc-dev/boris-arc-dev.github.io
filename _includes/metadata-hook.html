@@ -1,60 +1,168 @@
 <!-- ============================================================================== -->
-<!-- The Arc Archive - Security Guardrails & Content Protection Hook -->
+<!-- The Arc Archive - Enterprise Content Protection & Anti-Tampering Guard -->
+<!-- Policy: Strict All-Block (Zero Copy, Zero Right-Click, Anti-Extension Guard) -->
 <!-- ============================================================================== -->
 
 <!-- 1. Security & Privacy Headers -->
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 
+<!-- 2. CSS-Level Enforced Selection & Drag Block -->
+<style id="strict-anti-copy-style">
+  *, *::before, *::after {
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
+    -webkit-touch-callout: none !important;
+  }
+  img, pre, code {
+    -webkit-user-drag: none !important;
+    user-drag: none !important;
+  }
+  /* Policy 1: Disable Chirpy's Code Copy Buttons completely */
+  .code-header button,
+  button[data-title-succeed],
+  .btn-copy {
+    display: none !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+  }
+</style>
+
 <script>
-  /* 2. Anti-Clickjacking Frame-Busting Guard */
-  if (window.top !== window.self) {
-    try {
-      if (window.top.location.hostname !== window.self.location.hostname) {
+  (function() {
+    'use strict';
+
+    /* ========================================================================== */
+    /* 1. Anti-Clickjacking Frame-Busting Guard                                   */
+    /* ========================================================================== */
+    if (window.top !== window.self) {
+      try {
+        if (window.top.location.hostname !== window.self.location.hostname) {
+          window.top.location = window.self.location.href;
+        }
+      } catch (err) {
         window.top.location = window.self.location.href;
       }
-    } catch (err) {
-      window.top.location = window.self.location.href;
     }
-  }
 
-  /* 3. Smart Copyright Citation Guard (Clipboard Attribution) */
-  document.addEventListener('copy', function(e) {
-    var selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
-
-    var text = selection.toString();
-    if (!text || text.trim().length < 30) return;
-
-    /* Check if copying inside a code block (keep code clean) */
-    function isInsideCode(node) {
-      while (node && node !== document.body) {
-        if (node.nodeType === 1) {
-          var tag = node.tagName.toLowerCase();
-          if (tag === 'pre' || tag === 'code' || node.classList.contains('highlight') || node.classList.contains('code-header')) {
-            return true;
+    /* ========================================================================== */
+    /* 2. Self-Healing CSS Guard (Counters Chrome Extensions modifying user-select)*/
+    /* ========================================================================== */
+    function enforceAntiCopyCSS() {
+      var style = document.getElementById('strict-anti-copy-style');
+      if (!style) {
+        style = document.createElement('style');
+        style.id = 'strict-anti-copy-style';
+        style.textContent = `
+          *, *::before, *::after {
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+            -webkit-touch-callout: none !important;
           }
-        }
-        node = node.parentNode;
+          img, pre, code {
+            -webkit-user-drag: none !important;
+            user-drag: none !important;
+          }
+          .code-header button, button[data-title-succeed], .btn-copy {
+            display: none !important;
+            pointer-events: none !important;
+            visibility: hidden !important;
+          }
+        `;
+        (document.head || document.documentElement).appendChild(style);
       }
-      return false;
     }
 
-    if (isInsideCode(selection.anchorNode) && isInsideCode(selection.focusNode)) {
-      return; /* Allow pure code snippet copy */
+    /* Watch for DOM changes (Extension style injections) */
+    if (window.MutationObserver) {
+      var observer = new MutationObserver(function() {
+        enforceAntiCopyCSS();
+      });
+      observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true });
     }
+    setInterval(enforceAntiCopyCSS, 1000);
 
-    var citation = '\n\n' +
-      '--------------------------------------------------\n' +
-      '출처: The Arc Archive (https://boris-arc-dev.github.io)\n' +
-      '원문: ' + window.location.href + '\n' +
-      '저작자: Boris (Enterprise Backend Architect)\n' +
-      '* 저작자의 사전 동의 없는 무단 전재 및 재배포를 금합니다.\n' +
-      '--------------------------------------------------';
+    /* ========================================================================== */
+    /* 3. Event Suppression in Capture Phase (Intercepts before extensions)       */
+    /* ========================================================================== */
+    var blockedEvents = [
+      'contextmenu', /* Right-click menu */
+      'selectstart', /* Drag text start */
+      'dragstart',   /* Image/text drag */
+      'copy',        /* Clipboard copy */
+      'cut'          /* Clipboard cut */
+    ];
 
-    if (e.clipboardData) {
-      e.clipboardData.setData('text/plain', text + citation);
-      e.preventDefault();
-    }
-  });
+    blockedEvents.forEach(function(eventType) {
+      /* useCapture: true ensures our handler runs before bubbling & extensions */
+      window.addEventListener(eventType, function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+
+        /* Clipboard Poisoning: Empty out OS clipboard buffer */
+        if (e.clipboardData) {
+          e.clipboardData.setData('text/plain', '');
+        }
+        return false;
+      }, true);
+    });
+
+    /* ========================================================================== */
+    /* 4. Anti-Tampering: Freeze Inline Event Properties                          */
+    /* Counters extensions attempting: document.oncontextmenu = null               */
+    /* ========================================================================== */
+    ['oncontextmenu', 'onselectstart', 'oncopy', 'oncut', 'ondragstart'].forEach(function(prop) {
+      try {
+        Object.defineProperty(document, prop, {
+          get: function() { return function() { return false; }; },
+          set: function() { return false; },
+          configurable: false
+        });
+        Object.defineProperty(window, prop, {
+          get: function() { return function() { return false; }; },
+          set: function() { return false; },
+          configurable: false
+        });
+      } catch (err) {}
+    });
+
+    /* ========================================================================== */
+    /* 5. Keyboard Shortcut Suppression Guard                                     */
+    /* Blocks: Ctrl/Cmd + C, X, A, U, S, P and F12 / DevTools shortcuts           */
+    /* ========================================================================== */
+    window.addEventListener('keydown', function(e) {
+      var isMeta = e.ctrlKey || e.metaKey;
+      var key = e.key ? e.key.toLowerCase() : '';
+      var keyCode = e.keyCode || e.which;
+
+      /* F12: DevTools */
+      if (keyCode === 123) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        return false;
+      }
+
+      if (isMeta) {
+        /* C: Copy, X: Cut, A: Select All, U: View Source, S: Save Page, P: Print */
+        if (key === 'c' || key === 'x' || key === 'a' || key === 'u' || key === 's' || key === 'p') {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          return false;
+        }
+
+        /* DevTools: Cmd+Option+I/J/C or Ctrl+Shift+I/J/C */
+        if ((e.shiftKey || e.altKey) && (key === 'i' || key === 'j' || key === 'c')) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          return false;
+        }
+      }
+    }, true);
+
+  })();
 </script>
