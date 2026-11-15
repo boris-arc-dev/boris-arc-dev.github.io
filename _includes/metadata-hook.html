@@ -1,13 +1,13 @@
 <!-- ============================================================================== -->
 <!-- The Arc Archive - Enterprise Content Protection & Anti-Tampering Guard -->
-<!-- Policy: Strict All-Block (Zero Copy, Zero Right-Click, Anti-Extension Guard) -->
+<!-- Policy: Strict All-Block + Anti-Screenshot / Privacy Masking / Blank Print -->
 <!-- ============================================================================== -->
 
 <!-- 1. Security & Privacy Headers -->
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 
-<!-- 2. CSS-Level Enforced Selection & Drag Block -->
+<!-- 2. CSS-Level Enforced Selection, Drag Block, Print Blanks & Watermark -->
 <style id="strict-anti-copy-style">
   *, *::before, *::after {
     -webkit-user-select: none !important;
@@ -20,13 +20,45 @@
     -webkit-user-drag: none !important;
     user-drag: none !important;
   }
-  /* Policy 1: Disable Chirpy's Code Copy Buttons completely */
+  /* Disable Chirpy's Code Copy Buttons completely */
   .code-header button,
   button[data-title-succeed],
   .btn-copy {
     display: none !important;
     pointer-events: none !important;
     visibility: hidden !important;
+  }
+
+  /* Anti-Print: Completely blank out on Ctrl/Cmd+P and PDF exports */
+  @media print {
+    html, body {
+      display: none !important;
+      visibility: hidden !important;
+      height: 0 !important;
+      overflow: hidden !important;
+    }
+  }
+
+  /* Privacy Masking: Instant 28px blur when window loses focus (Screenshot tools) */
+  body.arc-focus-lost #main-wrapper,
+  body.arc-focus-lost #sidebar,
+  body.arc-focus-lost main {
+    filter: blur(28px) grayscale(90%) !important;
+    opacity: 0.15 !important;
+    transition: filter 0.05s ease, opacity 0.05s ease !important;
+  }
+
+  /* Copyright Watermark Overlay across entire viewport */
+  #arc-watermark-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    pointer-events: none !important;
+    z-index: 2147483647 !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='180'%3E%3Ctext x='20' y='90' fill='rgba(128,128,128,0.07)' font-size='13' font-family='sans-serif' transform='rotate(-25 160 90)' font-weight='bold'%3EThe Arc Archive • Boris • Do Not Capture%3C/text%3E%3C/svg%3E") !important;
+    background-repeat: repeat !important;
   }
 </style>
 
@@ -48,9 +80,18 @@
     }
 
     /* ========================================================================== */
-    /* 2. Self-Healing CSS Guard (Counters Chrome Extensions modifying user-select)*/
+    /* 2. Self-Healing CSS & Watermark DOM Guard                                  */
     /* ========================================================================== */
+    function ensureWatermark() {
+      if (!document.getElementById('arc-watermark-overlay')) {
+        var wm = document.createElement('div');
+        wm.id = 'arc-watermark-overlay';
+        (document.body || document.documentElement).appendChild(wm);
+      }
+    }
+
     function enforceAntiCopyCSS() {
+      ensureWatermark();
       var style = document.getElementById('strict-anti-copy-style');
       if (!style) {
         style = document.createElement('style');
@@ -72,12 +113,37 @@
             pointer-events: none !important;
             visibility: hidden !important;
           }
+          @media print {
+            html, body {
+              display: none !important;
+              visibility: hidden !important;
+              height: 0 !important;
+              overflow: hidden !important;
+            }
+          }
+          body.arc-focus-lost #main-wrapper,
+          body.arc-focus-lost #sidebar,
+          body.arc-focus-lost main {
+            filter: blur(28px) grayscale(90%) !important;
+            opacity: 0.15 !important;
+            transition: filter 0.05s ease, opacity 0.05s ease !important;
+          }
+          #arc-watermark-overlay {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            pointer-events: none !important;
+            z-index: 2147483647 !important;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='180'%3E%3Ctext x='20' y='90' fill='rgba(128,128,128,0.07)' font-size='13' font-family='sans-serif' transform='rotate(-25 160 90)' font-weight='bold'%3EThe Arc Archive • Boris • Do Not Capture%3C/text%3E%3C/svg%3E") !important;
+            background-repeat: repeat !important;
+          }
         `;
         (document.head || document.documentElement).appendChild(style);
       }
     }
 
-    /* Watch for DOM changes (Extension style injections) */
     if (window.MutationObserver) {
       var observer = new MutationObserver(function() {
         enforceAntiCopyCSS();
@@ -85,26 +151,38 @@
       observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true });
     }
     setInterval(enforceAntiCopyCSS, 1000);
+    document.addEventListener('DOMContentLoaded', enforceAntiCopyCSS);
 
     /* ========================================================================== */
-    /* 3. Event Suppression in Capture Phase (Intercepts before extensions)       */
+    /* 3. Anti-Screenshot Privacy Masking (Focus Loss & Visibility Triggers)      */
     /* ========================================================================== */
-    var blockedEvents = [
-      'contextmenu', /* Right-click menu */
-      'selectstart', /* Drag text start */
-      'dragstart',   /* Image/text drag */
-      'copy',        /* Clipboard copy */
-      'cut'          /* Clipboard cut */
-    ];
+    function applyMask() {
+      if (document.body) {
+        document.body.classList.add('arc-focus-lost');
+      }
+    }
+    function removeMask() {
+      if (document.body) {
+        document.body.classList.remove('arc-focus-lost');
+      }
+    }
 
+    window.addEventListener('blur', applyMask);
+    window.addEventListener('focus', removeMask);
+    document.addEventListener('visibilitychange', function() {
+      if (document.hidden) applyMask();
+      else removeMask();
+    });
+
+    /* ========================================================================== */
+    /* 4. Event Suppression in Capture Phase (Zero Copy, Zero Right-Click)        */
+    /* ========================================================================== */
+    var blockedEvents = ['contextmenu', 'selectstart', 'dragstart', 'copy', 'cut'];
     blockedEvents.forEach(function(eventType) {
-      /* useCapture: true ensures our handler runs before bubbling & extensions */
       window.addEventListener(eventType, function(e) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
-
-        /* Clipboard Poisoning: Empty out OS clipboard buffer */
         if (e.clipboardData) {
           e.clipboardData.setData('text/plain', '');
         }
@@ -113,8 +191,7 @@
     });
 
     /* ========================================================================== */
-    /* 4. Anti-Tampering: Freeze Inline Event Properties                          */
-    /* Counters extensions attempting: document.oncontextmenu = null               */
+    /* 5. Anti-Tampering: Freeze Inline Event Properties                          */
     /* ========================================================================== */
     ['oncontextmenu', 'onselectstart', 'oncopy', 'oncut', 'ondragstart'].forEach(function(prop) {
       try {
@@ -132,30 +209,27 @@
     });
 
     /* ========================================================================== */
-    /* 5. Keyboard Shortcut Suppression Guard                                     */
-    /* Blocks: Ctrl/Cmd + C, X, A, U, S, P and F12 / DevTools shortcuts           */
+    /* 6. Keyboard Shortcut Suppression Guard                                     */
     /* ========================================================================== */
     window.addEventListener('keydown', function(e) {
       var isMeta = e.ctrlKey || e.metaKey;
       var key = e.key ? e.key.toLowerCase() : '';
       var keyCode = e.keyCode || e.which;
 
-      /* F12: DevTools */
-      if (keyCode === 123) {
+      if (keyCode === 123) { /* F12 */
         e.preventDefault();
         e.stopImmediatePropagation();
         return false;
       }
 
       if (isMeta) {
-        /* C: Copy, X: Cut, A: Select All, U: View Source, S: Save Page, P: Print */
+        /* C, X, A, U, S, P */
         if (key === 'c' || key === 'x' || key === 'a' || key === 'u' || key === 's' || key === 'p') {
           e.preventDefault();
           e.stopImmediatePropagation();
           return false;
         }
-
-        /* DevTools: Cmd+Option+I/J/C or Ctrl+Shift+I/J/C */
+        /* DevTools shortcuts */
         if ((e.shiftKey || e.altKey) && (key === 'i' || key === 'j' || key === 'c')) {
           e.preventDefault();
           e.stopImmediatePropagation();
