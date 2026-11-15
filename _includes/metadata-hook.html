@@ -1,13 +1,13 @@
 <!-- ============================================================================== -->
 <!-- The Arc Archive - Enterprise Content Protection & Anti-Tampering Guard -->
-<!-- Policy: Strict All-Block + Anti-Screenshot / Privacy Masking / Blank Print -->
+<!-- Policy: Strict All-Block (Zero Copy, Zero Right-Click) + Blank Print Guard -->
 <!-- ============================================================================== -->
 
 <!-- 1. Security & Privacy Headers -->
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 
-<!-- 2. CSS-Level Enforced Selection, Drag Block, Print Blanks & Watermark -->
+<!-- 2. CSS-Level Enforced Selection, Drag Block & Print Blanks -->
 <style id="strict-anti-copy-style">
   *, *::before, *::after {
     -webkit-user-select: none !important;
@@ -38,28 +38,6 @@
       overflow: hidden !important;
     }
   }
-
-  /* Privacy Masking: Instant 28px blur when window loses focus (Screenshot tools) */
-  body.arc-focus-lost #main-wrapper,
-  body.arc-focus-lost #sidebar,
-  body.arc-focus-lost main {
-    filter: blur(28px) grayscale(90%) !important;
-    opacity: 0.15 !important;
-    transition: filter 0.05s ease, opacity 0.05s ease !important;
-  }
-
-  /* Copyright Watermark Overlay across entire viewport */
-  #arc-watermark-overlay {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    pointer-events: none !important;
-    z-index: 2147483647 !important;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='180'%3E%3Ctext x='20' y='90' fill='rgba(128,128,128,0.07)' font-size='13' font-family='sans-serif' transform='rotate(-25 160 90)' font-weight='bold'%3EThe Arc Archive • Boris • Do Not Capture%3C/text%3E%3C/svg%3E") !important;
-    background-repeat: repeat !important;
-  }
 </style>
 
 <script>
@@ -80,18 +58,9 @@
     }
 
     /* ========================================================================== */
-    /* 2. Self-Healing CSS & Watermark DOM Guard                                  */
+    /* 2. Self-Healing CSS Guard (Counters Chrome Extensions modifying user-select)*/
     /* ========================================================================== */
-    function ensureWatermark() {
-      if (!document.getElementById('arc-watermark-overlay')) {
-        var wm = document.createElement('div');
-        wm.id = 'arc-watermark-overlay';
-        (document.body || document.documentElement).appendChild(wm);
-      }
-    }
-
     function enforceAntiCopyCSS() {
-      ensureWatermark();
       var style = document.getElementById('strict-anti-copy-style');
       if (!style) {
         style = document.createElement('style');
@@ -121,24 +90,6 @@
               overflow: hidden !important;
             }
           }
-          body.arc-focus-lost #main-wrapper,
-          body.arc-focus-lost #sidebar,
-          body.arc-focus-lost main {
-            filter: blur(28px) grayscale(90%) !important;
-            opacity: 0.15 !important;
-            transition: filter 0.05s ease, opacity 0.05s ease !important;
-          }
-          #arc-watermark-overlay {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
-            pointer-events: none !important;
-            z-index: 2147483647 !important;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='180'%3E%3Ctext x='20' y='90' fill='rgba(128,128,128,0.07)' font-size='13' font-family='sans-serif' transform='rotate(-25 160 90)' font-weight='bold'%3EThe Arc Archive • Boris • Do Not Capture%3C/text%3E%3C/svg%3E") !important;
-            background-repeat: repeat !important;
-          }
         `;
         (document.head || document.documentElement).appendChild(style);
       }
@@ -154,28 +105,7 @@
     document.addEventListener('DOMContentLoaded', enforceAntiCopyCSS);
 
     /* ========================================================================== */
-    /* 3. Anti-Screenshot Privacy Masking (Focus Loss & Visibility Triggers)      */
-    /* ========================================================================== */
-    function applyMask() {
-      if (document.body) {
-        document.body.classList.add('arc-focus-lost');
-      }
-    }
-    function removeMask() {
-      if (document.body) {
-        document.body.classList.remove('arc-focus-lost');
-      }
-    }
-
-    window.addEventListener('blur', applyMask);
-    window.addEventListener('focus', removeMask);
-    document.addEventListener('visibilitychange', function() {
-      if (document.hidden) applyMask();
-      else removeMask();
-    });
-
-    /* ========================================================================== */
-    /* 4. Event Suppression in Capture Phase (Zero Copy, Zero Right-Click)        */
+    /* 3. Event Suppression in Capture Phase (Zero Copy, Zero Right-Click)        */
     /* ========================================================================== */
     var blockedEvents = ['contextmenu', 'selectstart', 'dragstart', 'copy', 'cut'];
     blockedEvents.forEach(function(eventType) {
@@ -191,7 +121,7 @@
     });
 
     /* ========================================================================== */
-    /* 5. Anti-Tampering: Freeze Inline Event Properties                          */
+    /* 4. Anti-Tampering: Freeze Inline Event Properties                          */
     /* ========================================================================== */
     ['oncontextmenu', 'onselectstart', 'oncopy', 'oncut', 'ondragstart'].forEach(function(prop) {
       try {
@@ -209,7 +139,7 @@
     });
 
     /* ========================================================================== */
-    /* 6. Keyboard Shortcut Suppression Guard                                     */
+    /* 5. Keyboard Shortcut Suppression Guard                                     */
     /* ========================================================================== */
     window.addEventListener('keydown', function(e) {
       var isMeta = e.ctrlKey || e.metaKey;
