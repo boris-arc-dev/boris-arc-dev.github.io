@@ -1,0 +1,60 @@
+<!-- ============================================================================== -->
+<!-- The Arc Archive - Security Guardrails & Content Protection Hook -->
+<!-- ============================================================================== -->
+
+<!-- 1. Security & Privacy Headers -->
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+
+<script>
+  /* 2. Anti-Clickjacking Frame-Busting Guard */
+  if (window.top !== window.self) {
+    try {
+      if (window.top.location.hostname !== window.self.location.hostname) {
+        window.top.location = window.self.location.href;
+      }
+    } catch (err) {
+      window.top.location = window.self.location.href;
+    }
+  }
+
+  /* 3. Smart Copyright Citation Guard (Clipboard Attribution) */
+  document.addEventListener('copy', function(e) {
+    var selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+
+    var text = selection.toString();
+    if (!text || text.trim().length < 30) return;
+
+    /* Check if copying inside a code block (keep code clean) */
+    function isInsideCode(node) {
+      while (node && node !== document.body) {
+        if (node.nodeType === 1) {
+          var tag = node.tagName.toLowerCase();
+          if (tag === 'pre' || tag === 'code' || node.classList.contains('highlight') || node.classList.contains('code-header')) {
+            return true;
+          }
+        }
+        node = node.parentNode;
+      }
+      return false;
+    }
+
+    if (isInsideCode(selection.anchorNode) && isInsideCode(selection.focusNode)) {
+      return; /* Allow pure code snippet copy */
+    }
+
+    var citation = '\n\n' +
+      '--------------------------------------------------\n' +
+      '출처: The Arc Archive (https://boris-arc-dev.github.io)\n' +
+      '원문: ' + window.location.href + '\n' +
+      '저작자: Boris (Enterprise Backend Architect)\n' +
+      '* 저작자의 사전 동의 없는 무단 전재 및 재배포를 금합니다.\n' +
+      '--------------------------------------------------';
+
+    if (e.clipboardData) {
+      e.clipboardData.setData('text/plain', text + citation);
+      e.preventDefault();
+    }
+  });
+</script>
