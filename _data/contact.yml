@@ -3,6 +3,10 @@
 - type: github
   icon: "fab fa-github"
 
+- type: buymeacoffee
+  icon: "fas fa-coffee"
+  url: "https://buymeacoffee.com/borisarcdev"
+
 - type: twitter
   icon: "fa-brands fa-x-twitter"
 
