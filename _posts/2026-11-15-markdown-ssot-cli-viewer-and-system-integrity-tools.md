@@ -1,6 +1,6 @@
 ---
 title: "단일 진실 공급원(SSOT)의 터미널 시각화: 마크다운 실시간 파서와 1초 무결성 건강 검진 툴체인 구축기"
-date: 2026-11-15 09:30:00 +0900
+date: 2026-11-15 09:15:00 +0900
 visibility: public
 mermaid: true
 categories: [DevOps, Architecture]

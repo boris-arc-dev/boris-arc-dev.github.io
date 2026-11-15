@@ -11,6 +11,9 @@ lang: ko-KR
 # Change to your timezone › https://zones.arilyn.cc
 timezone: Asia/Seoul
 
+# Publish future-dated posts (prevents accidental exclusion due to minute timezone drifts)
+future: true
+
 # jekyll-seo-tag settings › https://github.com/jekyll/jekyll-seo-tag/blob/master/docs/usage.md
 # ↓ --------------------------
 
